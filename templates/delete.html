@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% include 'navbar.html' %}
+{% block title %}Delete Event{% endblock %}
+{% block content %}
+<div class="card mx-auto" style="max-width: 400px;">
+    <div class="card-body">
+        <h3 class="card-title text-center mb-4">Delete Event</h3>
+        {% if msg %}
+            <div class="alert alert-info text-center">{{ msg }}</div>
+        {% endif %}
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">Event ID to Delete</label>
+                <input type="number" class="form-control" id="event_id" name="event_id" required>
+            </div>
+            <button type="submit" class="btn btn-danger w-100">Delete Event</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
