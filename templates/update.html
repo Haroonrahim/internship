@@ -6,13 +6,10 @@
     <div class="card-body">
         <h3 class="card-title text-center mb-4">Update Event</h3>
         {% if msg %}
-            <div class="alert alert-info text-center">{{ msg }}</div>
+        <div class="alert alert-info text-center">{{ msg }}</div>
         {% endif %}
         <form method="POST">
-            <div class="mb-3">
-                <label class="form-label">Event ID to Update</label>
-                <input type="number" class="form-control" name="event_id" required>
-            </div>
+            <!-- Event ID removed -->
             <div class="mb-3">
                 <label class="form-label">New Event Name</label>
                 <input type="text" class="form-control" name="event_name" required>
@@ -22,8 +19,20 @@
                 <input type="date" class="form-control" name="event_date" required>
             </div>
             <div class="mb-3">
+                <label class="form-label">New Event Time</label>
+                <select class="form-control" name="event_time" required>
+                    {% for time in event_times %}
+                    <option value="{{ time }}">{{ time }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
                 <label class="form-label">New Event Location</label>
-                <input type="text" class="form-control" name="event_location" required>
+                <select class="form-control" name="event_location" required>
+                    {% for loc in event_locations %}
+                    <option value="{{ loc }}">{{ loc }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="mb-3">
                 <label class="form-label">New Event Description</label>

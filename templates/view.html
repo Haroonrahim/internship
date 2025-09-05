@@ -9,7 +9,6 @@
             <table class="table table-bordered table-striped align-middle">
                 <thead class="table-primary">
                     <tr>
-                        <th>Event ID</th>
                         <th>Event Name</th>
                         <th>Event Date</th>
                         <th>Event Location</th>
@@ -17,15 +16,14 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for event in events %}
+                    {% for event in events %}
                     <tr>
-                        <td>{{ event[0] }}</td>
                         <td>{{ event[1] }}</td>
                         <td>{{ event[2] }}</td>
                         <td>{{ event[3] }}</td>
                         <td>{{ event[4] }}</td>
                     </tr>
-                {% endfor %}
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
