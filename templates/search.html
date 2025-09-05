@@ -1,42 +1,49 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Event</title>
-</head>
-<body>
-    <div class="container">
-        <h2>Search Event</h2>
-        {% if msg %}
-            <div class="msg">{{ msg }}</div>
-        {% endif %}
-        <form method="POST">
-            <label for="search_term">Search Term:</label>
-            <input type="text" id="search_term" name="search_term" required>
-            <input type="submit" value="Search Event">
-        </form>
-        {% if events %}
-            <table border="1" cellpadding="10">
-                <tr>
-                    <th>Event ID</th>
-                    <th>Event Name</th>
-                    <th>Event Date</th>
-                    <th>Event Location</th>
-                    <th>Event Description</th>
-                </tr>
-                {% for event in events %}
-                <tr>
-                    <td>{{ event[0] }}</td>
-                    <td>{{ event[1] }}</td>
-                    <td>{{ event[2] }}</td>
-                    <td>{{ event[3] }}</td>
-                    <td>{{ event[4] }}</td>
-                </tr>
-                {% endfor %}
-            </table>
-        {% endif %}
-        <a href="/home">Back to Home</a>
+{% extends "base.html" %}
+{% include 'navbar.html' %}
+{% block title %}Search Event{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h2 class="mb-4">Search Event</h2>
+            {% if msg %}
+            <div class="alert alert-info">{{ msg }}</div>
+            {% endif %}
+            <form method="POST" class="mb-4">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="search_term" name="search_term"
+                        placeholder="Enter event name..." required>
+                    <button class="btn btn-primary" type="submit">Search Event</button>
+                </div>
+            </form>
+            {% if events %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>Event ID</th>
+                            <th>Event Name</th>
+                            <th>Event Date</th>
+                            <th>Event Location</th>
+                            <th>Event Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for event in events %}
+                        <tr>
+                            <td>{{ event[0] }}</td>
+                            <td>{{ event[1] }}</td>
+                            <td>{{ event[2] }}</td>
+                            <td>{{ event[3] }}</td>
+                            <td>{{ event[4] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}
