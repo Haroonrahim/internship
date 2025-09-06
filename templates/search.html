@@ -22,9 +22,10 @@
                 <table class="table table-bordered table-hover">
                     <thead class="table-primary">
                         <tr>
-                            <th>Event ID</th>
+                    
                             <th>Event Name</th>
                             <th>Event Date</th>
+                            <th>Event time</th>
                             <th>Event Location</th>
                             <th>Event Description</th>
                         </tr>
@@ -32,11 +33,12 @@
                     <tbody>
                         {% for event in events %}
                         <tr>
-                            <td>{{ event[0] }}</td>
+                            
                             <td>{{ event[1] }}</td>
                             <td>{{ event[2] }}</td>
                             <td>{{ event[3] }}</td>
                             <td>{{ event[4] }}</td>
+                            <td>{{ event[5] }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
