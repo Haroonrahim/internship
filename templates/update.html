@@ -16,7 +16,7 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">New Event Date</label>
-                <input type="date" class="form-control" name="event_date" required>
+                <input type="date" class="form-control" name="event_date" min="{{ current_date }}" required>
             </div>
             <div class="mb-3">
                 <label class="form-label">New Event Time</label>

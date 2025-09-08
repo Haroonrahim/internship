@@ -117,35 +117,48 @@ def get_event_times():
             return [v.strip("'") for v in match.group(1).split(",")]
     return []
 
+# Add Function
 @app.route('/add', methods=['GET', 'POST'])
 def add_event():
-    if 'username' not in session or session.get('role') not in ['professor', 'admin']:
-        return redirect(url_for('login'))
-    event_locations = get_event_locations()
-    event_times = get_event_times()
-    if request.method == 'POST':
-        event_name = request.form.get('event_name')
-        event_date = request.form.get('event_date')
-        event_location = request.form.get('event_location')
-        event_time = request.form.get('event_time')
-        event_description = request.form.get('event_description')
+        from datetime import date, datetime
+        current_date = date.today().isoformat()
 
-        conn = connect_db()
-        cursor = conn.cursor()
-        # Check for duplicate event on same date, time, and location
-        cursor.execute('SELECT * FROM events WHERE event_date = %s AND event_time = %s AND event_location = %s', (event_date, event_time, event_location))
-        if cursor.fetchone():
-            cursor.close()
+        if 'username' not in session or session.get('role') not in ['professor', 'admin']:
+            return redirect(url_for('login'))
+        event_locations = get_event_locations()
+        event_times = get_event_times()
+        if request.method == 'POST':
+            event_name = request.form.get('event_name')
+            event_date = request.form.get('event_date')
+            
+            # Date Validation
+            if event_date:
+                event_date_obj = datetime.strptime(event_date, '%Y-%m-%d').date()
+                if event_date_obj < date.today():
+                    return render_template('add.html', msg='Please select a future date.', event_locations=event_locations, event_times=event_times, current_date=current_date)
+                
+            event_location = request.form.get('event_location')
+            event_time = request.form.get('event_time')
+            event_description = request.form.get('event_description')
+
+            conn = connect_db()
+            cursor = conn.cursor()
+            # Check for duplicate event on same date, time, and location
+            cursor.execute('SELECT * FROM events WHERE event_date = %s AND event_time = %s AND event_location = %s', (event_date, event_time, event_location))
+            if cursor.fetchone():
+                cursor.close()
+                conn.close()
+                return render_template('add.html', msg='An event already exists at this date, time, and location.', event_locations=event_locations, event_times=event_times)
+            # Insert event (assuming event_id is auto-increment)
+            query = 'INSERT INTO events (event_name, event_date, event_time, event_location, event_description) VALUES (%s, %s, %s, %s, %s)'
+            values = (event_name, event_date, event_time, event_location, event_description)
+            cursor.execute(query, values)
+            conn.commit()
             conn.close()
-            return render_template('add.html', msg='An event already exists at this date, time, and location.', event_locations=event_locations, event_times=event_times)
-        # Insert event (assuming event_id is auto-increment)
-        query = 'INSERT INTO events (event_name, event_date, event_time, event_location, event_description) VALUES (%s, %s, %s, %s, %s)'
-        values = (event_name, event_date, event_time, event_location, event_description)
-        cursor.execute(query, values)
-        conn.commit()
-        conn.close()
-        return render_template('add.html', msg='Event added successfully', event_locations=event_locations, event_times=event_times)
-    return render_template('add.html', event_locations=event_locations, event_times=event_times)
+            return render_template('add.html', msg='Event added successfully', event_locations=event_locations, event_times=event_times,current_date=current_date)
+        return render_template('add.html', event_locations=event_locations, event_times=event_times,current_date=current_date) 
+
+
     
 
 # Delete Function
@@ -170,8 +183,13 @@ def delete_event():
         return render_template('delete.html', msg='Event deleted successfully')
     return render_template('delete.html')
 
+
+# Update Function
 @app.route('/update', methods=['GET', 'POST'])
 def update_event():
+    from datetime import date, datetime
+    current_date = date.today().isoformat()
+
     if 'username' not in session or session.get('role') not in ['professor', 'admin']:
         return redirect(url_for('login'))
     event_locations = get_event_locations()
@@ -179,6 +197,13 @@ def update_event():
     if request.method == 'POST':
         event_name = request.form.get('event_name')
         event_date = request.form.get('event_date')
+
+        # Date Validation
+        if event_date:
+            event_date_obj = datetime.strptime(event_date, '%Y-%m-%d').date()
+            if event_date_obj < date.today():
+                return render_template('add.html', msg='Please select a future date.', event_locations=event_locations, event_times=event_times, current_date=current_date)
+            
         event_location = request.form.get('event_location')
         event_time = request.form.get('event_time')
         event_description = request.form.get('event_description')
@@ -207,9 +232,9 @@ def update_event():
         cursor.close()
         conn.close()
         if updated_count == 0:
-            return render_template('update.html', msg='No event found with that name, date, time, and location.', event_locations=event_locations, event_times=event_times)
-        return render_template('update.html', msg='Event updated successfully', event_locations=event_locations, event_times=event_times)
-    return render_template('update.html', event_locations=event_locations, event_times=event_times)
+            return render_template('update.html', msg='No event found with that name, date, time, and location.', event_locations=event_locations, event_times=event_times,current_date=current_date)
+        return render_template('update.html', msg='Event updated successfully', event_locations=event_locations, event_times=event_times,current_date=current_date)
+    return render_template('update.html', event_locations=event_locations, event_times=event_times,current_date=current_date)
 
 # Search Function
 @app.route('/search', methods=['GET', 'POST'])
