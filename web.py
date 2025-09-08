@@ -83,7 +83,8 @@ def view_events():
     cursor.execute(query)
     events = cursor.fetchall()
     cursor.close()
-    return render_template('view.html', events=events)
+    user_role = session.get('role')
+    return render_template('view.html', events=events, role=user_role)
 
 def get_event_locations():
     # Get enum values for event_location column
@@ -190,57 +191,82 @@ def update_event():
     from datetime import date, datetime
     current_date = date.today().isoformat()
 
+    # Check for logged-in user and role
     if 'username' not in session or session.get('role') not in ['professor', 'admin']:
         return redirect(url_for('login'))
+
     event_locations = get_event_locations()
     event_times = get_event_times()
+    event_data = None
+
+    if request.method == 'GET':
+        event_id = request.args.get('event_id')
+        if event_id and event_id.isdigit():
+            conn = connect_db()
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM events WHERE event_id = %s', (event_id,))
+            event_data = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            if not event_data:
+                flash('Event not found.', 'error')
+                return redirect(url_for('view_events'))
+
     if request.method == 'POST':
+        # Process form submission for update
+        event_id = request.form.get('event_id')
         event_name = request.form.get('event_name')
         event_date = request.form.get('event_date')
-
-        # Date Validation
-        if event_date:
-            event_date_obj = datetime.strptime(event_date, '%Y-%m-%d').date()
-            if event_date_obj < date.today():
-                return render_template('add.html', msg='Please select a future date.', event_locations=event_locations, event_times=event_times, current_date=current_date)
-            
         event_location = request.form.get('event_location')
         event_time = request.form.get('event_time')
         event_description = request.form.get('event_description')
 
+        # Date validation to ensure future date
+        if event_date:
+            event_date_obj = datetime.strptime(event_date, '%Y-%m-%d').date()
+            if event_date_obj < date.today():
+                return render_template('update.html', msg='Please select a future date.', 
+                                       event_locations=event_locations,
+                                       event_times=event_times,
+                                       current_date=current_date,
+                                       event=(event_id, event_name, event_date, event_time, event_location, event_description))
+
         conn = connect_db()
         cursor = conn.cursor()
-        # Find event to update by name, date, time, location
-        cursor.execute('SELECT event_id FROM events WHERE event_name = %s AND event_date = %s AND event_time = %s AND event_location = %s', (event_name, event_date, event_time, event_location))
-        event = cursor.fetchone()
-        if not event:
-            cursor.close()
-            conn.close()
-            return render_template('update.html', msg='No event found with that name, date, time, and location.', event_locations=event_locations, event_times=event_times)
-        event_id = event[0]
-        # Check for duplicate event on same date, time, location (excluding current event)
-        cursor.execute('SELECT event_id FROM events WHERE event_date = %s AND event_time = %s AND event_location = %s AND event_id != %s', (event_date, event_time, event_location, event_id))
+
+        # Check if duplicate event exists at same date, time, location excluding this event
+        cursor.execute('SELECT event_id FROM events WHERE event_date = %s AND event_time = %s AND event_location = %s AND event_id != %s',
+                       (event_date, event_time, event_location, event_id))
         if cursor.fetchone():
             cursor.close()
             conn.close()
-            return render_template('update.html', msg='Another event already exists at this date, time, and location.', event_locations=event_locations, event_times=event_times)
+            return render_template('update.html', msg='Another event already exists at this date, time, and location!',
+                                   event_locations=event_locations,
+                                   event_times=event_times,
+                                   current_date=current_date,
+                                   event=(event_id, event_name, event_date, event_time, event_location, event_description))
+        
         # Update event
-        query = 'UPDATE events SET event_name = %s, event_date = %s, event_time = %s, event_location = %s, event_description = %s WHERE event_id = %s'
+        query = '''UPDATE events SET event_name = %s, event_date = %s, event_time = %s, event_location = %s, event_description = %s WHERE event_id = %s'''
         cursor.execute(query, (event_name, event_date, event_time, event_location, event_description, event_id))
-        updated_count = cursor.rowcount
         conn.commit()
         cursor.close()
         conn.close()
-        if updated_count == 0:
-            return render_template('update.html', msg='No event found with that name, date, time, and location.', event_locations=event_locations, event_times=event_times,current_date=current_date)
-        return render_template('update.html', msg='Event updated successfully', event_locations=event_locations, event_times=event_times,current_date=current_date)
-    return render_template('update.html', event_locations=event_locations, event_times=event_times,current_date=current_date)
+
+        return render_template('update.html', msg='Event updated successfully', event_locations=event_locations,
+                               event_times=event_times, current_date=current_date, event=None)
+
+    # For GET request without event_id or to show form pre-filled
+    return render_template('update.html', event_locations=event_locations, event_times=event_times,
+                           current_date=current_date, event=event_data)
+
 
 # Search Function
 @app.route('/search', methods=['GET', 'POST'])
 def search_event():
     if 'username' not in session:
         return redirect(url_for('login'))
+    role = session.get('role')
     if request.method == 'POST':
         search_term = request.form.get('search_term')
         conn = connect_db()
@@ -250,10 +276,10 @@ def search_event():
         results = cursor.fetchall()
         cursor.close()
         if results:
-            return render_template('search.html', events=results)
+            return render_template('search.html', events=results, role=role)
         else:
-            return render_template('search.html', msg='No events found with that name.')
-    return render_template('search.html')
+            return render_template('search.html', msg='No events found with that name.',role=role)
+    return render_template('search.html',role=role)
 
 if __name__ == '__main__':
     app.run(debug=True)
