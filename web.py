@@ -84,7 +84,8 @@ def view_events():
     events = cursor.fetchall()
     cursor.close()
     user_role = session.get('role')
-    return render_template('view.html', events=events, role=user_role)
+    username = session.get('username') # Add userrname
+    return render_template('view.html', events=events, role=user_role, username=username)
 
 def get_event_locations():
     # Get enum values for event_location column
@@ -121,46 +122,52 @@ def get_event_times():
 # Add Function
 @app.route('/add', methods=['GET', 'POST'])
 def add_event():
-        from datetime import date, datetime
-        current_date = date.today().isoformat()
+    from datetime import date, datetime
+    current_date = date.today().isoformat()
 
-        if 'username' not in session or session.get('role') not in ['professor', 'admin']:
-            return redirect(url_for('login'))
-        event_locations = get_event_locations()
-        event_times = get_event_times()
-        if request.method == 'POST':
-            event_name = request.form.get('event_name')
-            event_date = request.form.get('event_date')
-            
-            # Date Validation
-            if event_date:
-                event_date_obj = datetime.strptime(event_date, '%Y-%m-%d').date()
-                if event_date_obj < date.today():
-                    return render_template('add.html', msg='Please select a future date.', event_locations=event_locations, event_times=event_times, current_date=current_date)
-                
-            event_location = request.form.get('event_location')
-            event_time = request.form.get('event_time')
-            event_description = request.form.get('event_description')
+    if 'username' not in session or session.get('role') not in ['professor', 'admin']:
+        return redirect(url_for('login'))
 
-            conn = connect_db()
-            cursor = conn.cursor()
-            # Check for duplicate event on same date, time, and location
-            cursor.execute('SELECT * FROM events WHERE event_date = %s AND event_time = %s AND event_location = %s', (event_date, event_time, event_location))
-            if cursor.fetchone():
-                cursor.close()
-                conn.close()
-                return render_template('add.html', msg='An event already exists at this date, time, and location.', event_locations=event_locations, event_times=event_times)
-            # Insert event (assuming event_id is auto-increment)
-            query = 'INSERT INTO events (event_name, event_date, event_time, event_location, event_description) VALUES (%s, %s, %s, %s, %s)'
-            values = (event_name, event_date, event_time, event_location, event_description)
-            cursor.execute(query, values)
-            conn.commit()
+    event_locations = get_event_locations()
+    event_times = get_event_times()
+
+    if request.method == 'POST':
+        event_name = request.form.get('event_name')
+        event_date = request.form.get('event_date')
+        
+        # Date validation
+        if event_date:
+            event_date_obj = datetime.strptime(event_date, '%Y-%m-%d').date()
+            if event_date_obj < date.today():
+                return render_template('add.html', msg='Please select a future date.', event_locations=event_locations, event_times=event_times, current_date=current_date)
+        
+        event_location = request.form.get('event_location')
+        event_time = request.form.get('event_time')
+        event_description = request.form.get('event_description')
+        professor_id = session.get('username')  # Store professor's username
+
+        conn = connect_db()
+        cursor = conn.cursor()
+
+        # Check for duplicate event at same date, time, location
+        cursor.execute('SELECT * FROM events WHERE event_date = %s AND event_time = %s AND event_location = %s', (event_date, event_time, event_location))
+        if cursor.fetchone():
+            cursor.close()
             conn.close()
-            return render_template('add.html', msg='Event added successfully', event_locations=event_locations, event_times=event_times,current_date=current_date)
-        return render_template('add.html', event_locations=event_locations, event_times=event_times,current_date=current_date) 
+            return render_template('add.html', msg='An event already exists at this date, time, and location.', event_locations=event_locations, event_times=event_times)
+        
+        # Insert event along with professor_id
+        query = 'INSERT INTO events (event_name, event_date, event_time, event_location, event_description, professor_id) VALUES (%s, %s, %s, %s, %s, %s)'
+        values = (event_name, event_date, event_time, event_location, event_description, professor_id)
+        cursor.execute(query, values)
+        conn.commit()
+        cursor.close()
+        conn.close()
 
+        return render_template('add.html', msg='Event added successfully', event_locations=event_locations, event_times=event_times, current_date=current_date)
 
-    
+    return render_template('add.html', event_locations=event_locations, event_times=event_times, current_date=current_date)
+
 
 # Delete Function
 @app.route('/delete', methods=['GET', 'POST'])
@@ -267,6 +274,7 @@ def search_event():
     if 'username' not in session:
         return redirect(url_for('login'))
     role = session.get('role')
+    username = session.get('username')  # get current username from session
     if request.method == 'POST':
         search_term = request.form.get('search_term')
         conn = connect_db()
@@ -276,10 +284,11 @@ def search_event():
         results = cursor.fetchall()
         cursor.close()
         if results:
-            return render_template('search.html', events=results, role=role)
+            return render_template('search.html', events=results, role=role, username=username)
         else:
-            return render_template('search.html', msg='No events found with that name.',role=role)
-    return render_template('search.html',role=role)
+            return render_template('search.html', msg='No events found with that name.', role=role, username=username)
+    return render_template('search.html', role=role, username=username)
+
 
 if __name__ == '__main__':
     app.run(debug=True)

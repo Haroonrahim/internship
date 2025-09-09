@@ -40,6 +40,7 @@
                             <td>{{ event[3] }}</td>
                             <td>{{ event[4] }}</td>
                             <td>{{ event[5] }}</td>
+                            {% if role in ['admin', 'professor'] %}
                             <td>
                                 {% if role == 'admin' %}
                                 <div style="display: inline-flex; gap: 10px; align-items: center;">
@@ -53,13 +54,14 @@
                                         <button type="submit" class="btn btn-warning btn-sm">Update</button>
                                     </form>
                                 </div>
-                                {% elif role == 'professor' %}
+                                {% elif role == 'professor' and event[6] == username %}
                                 <form action="{{ url_for('update_event') }}" method="get" style="margin: 0;">
                                     <input type="hidden" name="event_id" value="{{ event[0] }}">
                                     <button type="submit" class="btn btn-warning btn-sm">Update</button>
                                 </form>
                                 {% endif %}
                             </td>
+                            {% endif %}
                         </tr>
                         {% endfor %}
                     </tbody>
