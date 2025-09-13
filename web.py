@@ -14,14 +14,14 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Set a secret key for sessions
 
 # Register Page
-@app.route('/signin', methods=['GET', 'POST'])
-def signin():
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
         role = request.form.get('role')
         if not username or not password or not role:
-            return render_template('signin.html', msg='All fields are required.')
+            return render_template('signup.html', msg='All fields are required.')
         conn = connect_db()
         cursor = conn.cursor()
         try:
@@ -31,12 +31,12 @@ def signin():
         except mysql.connector.IntegrityError:
             cursor.close()
             conn.close()
-            return render_template('signin.html', msg='Username already exists.')
+            return render_template('signup.html', msg='Username already exists.')
         cursor.close()
         conn.close()
         flash('Registration successful. Please log in.', 'success')
         return redirect(url_for('login'))
-    return render_template('signin.html')
+    return render_template('signup.html')
 
 # Login Page
 @app.route('/login', methods=['GET', 'POST'])
@@ -188,7 +188,7 @@ def delete_event():
         cursor.close()
         if deleted_count == 0:
             return render_template('delete.html', msg='No event found with that ID.')
-        return render_template('delete.html', msg='Event deleted successfully')
+        return render_template('delete.html', msg='Event deleted successfully.')
     return render_template('delete.html')
 
 
