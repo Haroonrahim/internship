@@ -290,5 +290,39 @@ def search_event():
     return render_template('search.html', role=role, username=username)
 
 
+# Admin Users Table
+@app.route('/users')
+def admin_users():
+    # Only allow access for admin role
+    if 'username' not in session or session.get('role') != 'admin':
+        return redirect(url_for('login'))
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT username, role FROM user WHERE username IS NOT NULL")
+    users = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    users = [{'username': u[0], 'role': u[1]} for u in users]
+    return render_template('users.html', users=users)
+
+# Delete User Function
+@app.route('/delete_user', methods=['POST'])
+def delete_user():
+    if 'username' not in session or session.get('role') != 'admin':
+        return redirect(url_for('login'))
+    username = request.form.get('username')
+    if not username:
+        flash('No user selected for deletion.', 'danger')
+        return redirect(url_for('admin_users'))
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM user WHERE username = %s", (username,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash(f'User {username} deleted successfully.', 'success')
+    return redirect(url_for('admin_users'))
+
+
 if __name__ == '__main__':
     app.run(debug=True)
